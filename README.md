@@ -15,7 +15,7 @@ Clone the repository and install dependencies:
 ```bash
 git clone https://github.com/yourusername/rissa_plotter.git
 cd rissa_plotter
-pip install -r requirements.txt
+pip install .
 ```
 
 ## Usage
