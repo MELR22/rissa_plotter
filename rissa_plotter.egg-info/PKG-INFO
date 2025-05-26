@@ -1,0 +1,17 @@
+Metadata-Version: 2.4
+Name: rissa_plotter
+Version: 0.1.0
+Summary: Python package for processing and analyzing citizen science data on Kittiwakes (Rissa)
+Author-email: Roel Melman <roel.melman@gmail.com>
+Requires-Dist: pandas
+Requires-Dist: firebase-admin
+Requires-Dist: geopandas
+Requires-Dist: dask
+Requires-Dist: fiona
+Requires-Dist: geopandas
+Requires-Dist: h5netcdf
+Requires-Dist: matplotlib
+Requires-Dist: netcdf4
+Requires-Dist: numpy
+Requires-Dist: rioxarray
+Requires-Dist: xarray

@@ -1,0 +1,12 @@
+pandas
+firebase-admin
+geopandas
+dask
+fiona
+geopandas
+h5netcdf
+matplotlib
+netcdf4
+numpy
+rioxarray
+xarray

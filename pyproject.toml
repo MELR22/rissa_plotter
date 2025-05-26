@@ -1,0 +1,33 @@
+[project]
+name = "rissa_plotter"
+version = "0.1.0"
+description = "Python package for processing and analyzing citizen science data on Kittiwakes (Rissa)"
+authors = [{ name = "Roel Melman", email = "roel.melman@gmail.com" }]
+dependencies = [
+    "pandas",
+    "firebase-admin",
+    "geopandas",
+    "dask",
+	"fiona",
+	"geopandas",
+	"h5netcdf",
+	"matplotlib",
+	"netcdf4",
+	"numpy",
+	"rioxarray",
+	"xarray",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+
+[tool.isort]
+profile = "black"
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.package-data]
+"rissa_plotter.visualize" = ["data/*.png", "data/*.ttf"]
