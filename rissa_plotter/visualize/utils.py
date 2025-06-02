@@ -12,11 +12,13 @@ class ColorMap:
     c3 = "grey"
     c4 = "#9BB7C3"
     c5 = "#3F553E"
+    c6 = "#fe2300"
+    c7 = "#fdf55f"
 
 
 class LineStyle:
     VisibleAdults = "-"
-    AdultsOnNest = "--"
+    ApperentlyOccupied = "--"
 
 
 def get_logo():
@@ -91,3 +93,38 @@ def resample_city_data(df: pd.DataFrame, frequency: str) -> pd.DataFrame:
     grouped = grouped.set_index("timestamp").sort_index()
 
     return grouped[["station", "adultCount", "aonCount"]]
+
+
+def resample_hotel_data(df: pd.DataFrame, frequency: str) -> pd.DataFrame:
+    """
+    Resample a DataFrame to a given frequency using max values per hotel.
+    The output uses the midpoint of each resample period as the timestamp index.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame with a DatetimeIndex, and columns: 'hotel', 'nestCount', 'chickCount'.
+    frequency : int
+        Resample frequency.
+
+    Returns
+    -------
+    pd.DataFrame
+        Resampled DataFrame indexed by the midpoint timestamps of each aggregation period,
+        with columns: 'hotel', 'nestCount', 'chickCount'.
+    """
+    df = df.copy()
+
+    if not isinstance(df.index, pd.DatetimeIndex):
+        raise ValueError("DataFrame index must be a DatetimeIndex.")
+
+    grouped = (
+        df.groupby("hotel")
+        .resample(frequency)
+        .agg({"nestCount": "max", "chickCount": "max"})
+        .reset_index()
+    )
+    # Set shifted timestamp as index
+    grouped = grouped.set_index("timestamp").sort_index()
+
+    return grouped[["hotel", "nestCount", "chickCount"]]

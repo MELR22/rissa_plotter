@@ -1,12 +1,13 @@
 README.md
 pyproject.toml
 rissa_plotter/__init__.py
+rissa_plotter/base.py
+rissa_plotter/validators.py
 rissa_plotter.egg-info/PKG-INFO
 rissa_plotter.egg-info/SOURCES.txt
 rissa_plotter.egg-info/dependency_links.txt
 rissa_plotter.egg-info/requires.txt
 rissa_plotter.egg-info/top_level.txt
-rissa_plotter/process/__init__.py
 rissa_plotter/readers/__init__.py
 rissa_plotter/readers/firebase.py
 rissa_plotter/readers/tables.py
