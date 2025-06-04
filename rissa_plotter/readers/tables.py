@@ -2,7 +2,7 @@ from pathlib import Path
 import ast
 import pandas as pd
 
-from rissa_plotter import HotelData
+from rissa_plotter import HotelData, CityData
 from rissa_plotter.readers import FireBase
 
 
@@ -51,6 +51,7 @@ def open_city_table(path: str | Path) -> pd.DataFrame:
     df = pd.concat([legacy, current], ignore_index=True)
     df = df.sort_values(by=["timestamp", "station"], ascending=[True, True])
     df.reset_index(drop=True, inplace=True)
+    df = df.set_index("timestamp")
 
     columns = [
         "userId",
@@ -63,7 +64,13 @@ def open_city_table(path: str | Path) -> pd.DataFrame:
         "aonCount",
         "comment",
     ]
-    return df[columns]
+
+    years = [2023, 2024, 2025]
+
+    return CityData(
+        years=years,
+        data=df[columns],
+    )
 
 
 def open_hotel_table(path: str | Path) -> pd.DataFrame:

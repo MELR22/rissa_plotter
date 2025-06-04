@@ -1,5 +1,5 @@
 # %%
-from rissa_plotter import readers, visualize, HotelData
+from rissa_plotter import readers, visualize, HotelData, CityData
 import pandas as pd
 import ast
 
@@ -33,9 +33,23 @@ years = [2023, 2024, 2025]
 hotel_data = HotelData(hotels=hotels, years=years, data=df)
 hotel_data.select_on(hotel="Hotel 1")
 hp = visualize.HotelPlotter(hotel_data)
-fig = hp.plot_chick_counts(figsize=(10, 6), dpi=400, hotels=hotels[:4], month=6)
-# fig2 = hp.plot_submissions(figsize=(10, 6), dpi=400)
+fig = hp.plot_chick_counts(figsize=(8, 6), dpi=400, hotels=hotels[:3])
+fig2 = hp.plot_submissions(figsize=(10, 6), dpi=400)
+
 
 # %%
+from rissa_plotter import visualize, HotelData, CityData
+import pandas as pd
+import ast
 
+path = r"c:\work_projects\Rissa\data\city_data.csv"
+df = pd.read_csv(path, index_col="timestamp", parse_dates=True)
+
+years = [2023, 2024, 2025]
+
+city_data = CityData(years=years, data=df)
+cp = visualize.CityPlotter(city_data)
+fig = cp.plot_timeseries(figsize=(8, 6), dpi=400)
+fig1 = cp.compare_years(figsize=(8, 6), dpi=400)
+fig2 = cp.plot_submissions(figsize=(10, 6), dpi=400)
 # %%

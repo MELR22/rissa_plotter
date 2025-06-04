@@ -1,1 +1,3 @@
-from .base import HotelData
+import rissa_plotter.util
+
+from .base import HotelData, CityData

@@ -3,21 +3,20 @@ import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 from matplotlib.dates import DateFormatter
 
-from .utils import ColorMap, LineStyle, get_logo, get_chelsea_font
-from .utils import add_month_day_columns, resample_city_data
+from rissa_plotter import util
+from rissa_plotter import CityData
 
-logo = get_logo()
-chelsea_font = get_chelsea_font()
+logo = util.get_logo()
+chelsea_font = util.get_chelsea_font()
 plt.rcParams["font.family"] = chelsea_font.get_name()
 
 
 class CityPlotter:
-    def __init__(self, city_data: pd.DataFrame):
+    def __init__(self, city_data: CityData):
         """
         Initialize CityPlotter with raw city data and prepare resampled version.
         """
-        self.city_data = city_data.set_index("timestamp")
-        self.resampled = resample_city_data(self.city_data, frequency="SME")
+        self.data = city_data
 
     def plot_timeseries(self, year: int = None, station: str = None, **kwargs):
         """
@@ -36,7 +35,7 @@ class CityPlotter:
         -------
         matplotlib.figure.Figure
         """
-        data = self.resampled.copy()
+        data = self.data.resampled
         title = "Kittiwakes at City Stations"
 
         if year:
@@ -49,22 +48,21 @@ class CityPlotter:
         else:
             data = data[["adultCount", "aonCount"]].groupby(data.index).sum()
 
+        data = data.where(data > 0)
         fig, ax = plt.subplots(**kwargs)
 
         data["adultCount"].plot(
             ax=ax,
-            color=ColorMap.c1,
+            color=util.ColorMap.c1,
             label="Visible adults",
-            linewidth=2,
-            linestyle=LineStyle.VisibleAdults,
+            linestyle="-",
         )
 
         data["aonCount"].plot(
             ax=ax,
-            color=ColorMap.c2,
+            color=util.ColorMap.c2,
             label="Apparently occupied nests",
-            linewidth=2,
-            linestyle=LineStyle.ApperentlyOccupied,
+            linestyle="--",
         )
 
         self._style_plot(
@@ -88,76 +86,110 @@ class CityPlotter:
         -------
         matplotlib.figure.Figure
         """
-        data = self.resampled.copy()
+        data = self.data.resampled
+        data_cols = ["adultCount", "aonCount"]
         title = "Kittiwakes at City Stations"
 
         if station:
             data = data[data["station"] == station]
             title += f" - station {station}"
         else:
-            data = data[["adultCount", "aonCount"]].groupby(data.index).sum()
+            data = data[data_cols].groupby(data.index).sum()
 
-        add_month_day_columns(data, inplace=True)
+        util.add_month_day_columns(data, inplace=True)
+
+        colors = [util.ColorMap.c2, util.ColorMap.c1, util.ColorMap.c6]
+        years = self.data.years
 
         fig, ax = plt.subplots(**kwargs)
-        years = sorted(data["year"].unique())
-        colors = ["c1", "c2", "c3", "c4", "c5", "cream"][: len(years)]
-        color_handles = []
-
         for year, color in zip(years, colors):
-            color = getattr(ColorMap, color)
             year_data = data[data["year"] == year].set_index("plot_date")
-            year_data = year_data.where(year_data > 0)
+
+            year_data[data_cols] = year_data[data_cols].where(year_data[data_cols] > 0)
 
             year_data["adultCount"].plot(
                 ax=ax,
-                linestyle=LineStyle.VisibleAdults,
+                linestyle="-",
                 color=color,
             )
             year_data["aonCount"].plot(
                 ax=ax,
-                linestyle=LineStyle.ApperentlyOccupied,
+                linestyle="--",
                 color=color,
             )
 
-            color_handles.append(
-                mlines.Line2D([], [], color=color, label=str(year), linestyle="-")
-            )
+        # Legend 1 - years
+        handles_1 = [
+            mlines.Line2D([], [], color=colors[0], label=str(years[0]), linestyle="-"),
+            mlines.Line2D([], [], color=colors[1], label=str(years[1]), linestyle="-"),
+            mlines.Line2D([], [], color=colors[2], label=str(years[2]), linestyle="-"),
+        ]
+        legend_1 = ax.legend(
+            handles=handles_1, loc="upper left", fontsize=10, frameon=False
+        )
+        ax.add_artist(legend_1)
 
-        # Legends
-        ax.legend(handles=color_handles, loc="upper left", fontsize=10, frameon=False)
-        ax.add_artist(
-            ax.legend(
-                handles=[
-                    mlines.Line2D(
-                        [],
-                        [],
-                        color="black",
-                        label="Visible adults",
-                        linestyle=LineStyle.VisibleAdults,
-                    ),
-                    mlines.Line2D(
-                        [],
-                        [],
-                        color="black",
-                        label="Adults on nest",
-                        linestyle=LineStyle.ApperentlyOccupied,
-                    ),
-                ],
-                loc="lower right",
-                fontsize=8,
-                frameon=False,
-            )
+        # legend 2 - type
+        handels_2 = [
+            mlines.Line2D([], [], color="black", label="Visible adults", linestyle="-"),
+            mlines.Line2D(
+                [], [], color="black", label="Apperently Occupied", linestyle="--"
+            ),
+        ]
+        ax.legend(
+            handles=handels_2,
+            loc="lower right",
+            fontsize=8,
+            frameon=False,
         )
 
         # Set axis limits
         self._style_plot(ax, title, data["adultCount"].max(), year_range=None)
 
-        ax.set_xlim(pd.Timestamp("2000-04-01"), pd.Timestamp("2000-09-30"))
+        ax.set_xlim(pd.Timestamp("2000-04-01"), pd.Timestamp("2000-10-31"))
         ax.xaxis.set_major_formatter(DateFormatter("%b-%d"))
         fig.autofmt_xdate()
 
         return fig
+
+    def plot_submissions(self, **kwargs):
+        # Define colors and years to plot
+        colors = [util.ColorMap.c2, util.ColorMap.c1, util.ColorMap.c6]
+        years = self.data.years
+
+        # Create figure and axis
+        fig, ax = plt.subplots(**kwargs)
+
+        # Loop through each year and plot cumulative submissions
+        for color, year in zip(colors, years):
+            yearly_data = self.data.daily_submissions[
+                self.data.daily_submissions["year"] == year
+            ]
+            yearly_data = util.add_month_day_columns(yearly_data)
+
+            ax.plot(
+                yearly_data["plot_date"],
+                yearly_data["entry"].cumsum(),
+                color=color,
+                label=str(year),
+            )
+
+        # Format plot
+        ax.set_title("Submissions by Kittiwalkers at City Stations")
+        ax.set_ylabel("Cumulative submissions per year")
+        ax.set_xlabel("")
+        ax.set_xlim(pd.Timestamp("2000-04-01"), pd.Timestamp("2000-9-30"))
+        ax.set_ylim(0, 1000)
+        ax.xaxis.set_major_formatter(DateFormatter("%b-%d"))
+        ax.legend(frameon=False, loc="upper left")
+        ax.spines["top"].set_visible(False)
+        ax.spines["right"].set_visible(False)
+        fig.autofmt_xdate()
+
+        # Add logo in new axis
+        logo_ax = fig.add_axes([0.75, 0.8, 0.15, 0.15], anchor="SE")
+        logo_ax.imshow(logo)
+        logo_ax.axis("off")
 
     def _style_plot(self, ax, title, ymax, year_range=None):
         """

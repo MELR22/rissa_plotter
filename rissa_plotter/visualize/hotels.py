@@ -3,12 +3,10 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 from matplotlib.dates import DateFormatter
 
-from rissa_plotter import HotelData
-from .utils import ColorMap, get_logo, get_chelsea_font
-from .utils import add_month_day_columns
+from rissa_plotter import HotelData, util
 
-logo = get_logo()
-chelsea_font = get_chelsea_font()
+logo = util.get_logo()
+chelsea_font = util.get_chelsea_font()
 plt.rcParams["font.family"] = chelsea_font.get_name()
 
 
@@ -30,7 +28,7 @@ class HotelPlotter:
             Additional keyword arguments passed to `plt.subplots`.
         """
 
-        colors = [ColorMap.c2, ColorMap.c1, ColorMap.c6]
+        colors = [util.ColorMap.c2, util.ColorMap.c1, util.ColorMap.c6]
         columns = ["one_chick", "two_chicks", "three_chicks"]
 
         # Default to all hotels
@@ -94,8 +92,8 @@ class HotelPlotter:
 
     def plot_submissions(self, **kwargs):
         # Define colors and years to plot
-        colors = [ColorMap.c2, ColorMap.c1, ColorMap.c6]
-        years = [2023, 2024, 2025]
+        colors = [util.ColorMap.c2, util.ColorMap.c1, util.ColorMap.c6]
+        years = self.data.years
 
         # Create figure and axis
         fig, ax = plt.subplots(**kwargs)
@@ -105,7 +103,7 @@ class HotelPlotter:
             yearly_data = self.data.daily_submissions[
                 self.data.daily_submissions["year"] == year
             ]
-            yearly_data = add_month_day_columns(yearly_data)
+            yearly_data = util.add_month_day_columns(yearly_data)
 
             ax.plot(
                 yearly_data["plot_date"],

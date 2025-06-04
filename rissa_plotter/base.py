@@ -1,85 +1,62 @@
-from collections import Counter
-
 import pandas as pd
 
-from .validators import ValidNumber
+from rissa_plotter import util
 
 
-def _count_nests(ledges: dict, include_aon: bool = True) -> int:
-    """
-    Parameters
-    ----------
-    ledges : dict
-        A dictionary containing ledge statuses.
-    include_aon : bool, optional
-        If True, includes "Apparently occupied nest" in the count (default is True).
-    Returns
-    -------
-    int
-        Total number of nests counted.
-    Optionally includes "Apparently occupied nest" if `include_aon` is True.
-    """
-    counts = Counter(ledges.values())
-
-    nests = (
-        counts.get("1 chick visible", 0)
-        + counts.get("2 chicks visible", 0)
-        + counts.get("3 chicks visible", 0)
-    )
-
-    if include_aon:
-        nests += counts.get("Apparently occupied nest", 0)
-
-    return nests
-
-
-def _count_chicks(ledges: dict) -> tuple[int, int, int]:
-    """
-    Parameters
-    ----------
-    ledges : dict
-        A dictionary containing ledge statuses.
-    Returns
-    -------
-    tuple
-        Counts of (1 chick, 2 chicks, 3 chicks).
-    """
-    counts = Counter(ledges.values())
-
-    one_chick = counts.get("1 chick visible", 0)
-    two_chicks = counts.get("2 chicks visible", 0)
-    three_chicks = counts.get("3 chicks visible", 0)
-
-    return one_chick, two_chicks, three_chicks
+import pandas as pd
+from typing import List
 
 
 class HotelData:
-    month = ValidNumber(4, 9)
+    """
+    Class to process and analyze nesting data from hotels over multiple years.
+    """
 
     def __init__(
         self,
-        hotels: str | list,
-        years: int | list,
+        hotels: List[str],
+        years: List[int],
         data: pd.DataFrame,
         include_aon: bool = True,
+        month: int = 4,
     ):
         self.hotels = hotels
         self.years = years
-        self.data = data
+        self.data = data.copy()
         self.include_aon = include_aon
+        self.month = self._validate_month(month)
 
-        self._preprocess()
+        self._prepare_data()
+
+    @staticmethod
+    def _validate_month(month: int) -> int:
+        """Ensure the month is within the valid range [4, 9]."""
+        if not (4 <= month <= 9):
+            raise ValueError("Month must be between 4 and 9.")
+        return month
+
+    def _prepare_data(self):
+        """Preprocess and compute relevant columns."""
+        self._add_nest_counts()
+        self._add_chick_counts()
         self._compute_daily_submissions()
 
-    def _preprocess(self):
+    def _add_nest_counts(self):
+        """Add nest count to the data."""
         self.data["nestCount"] = self.data["ledgeStatuses"].apply(
-            lambda x: _count_nests(x, include_aon=self.include_aon)
+            lambda x: util._count_nests(x, include_aon=self.include_aon)
         )
-        chick_counts = self.data["ledgeStatuses"].apply(_count_chicks).apply(pd.Series)
+
+    def _add_chick_counts(self):
+        """Add one/two/three chick count columns to the data."""
+        chick_counts = (
+            self.data["ledgeStatuses"].apply(util._count_chicks).apply(pd.Series)
+        )
         chick_counts.columns = ["one_chick", "two_chicks", "three_chicks"]
         self.data[["one_chick", "two_chicks", "three_chicks"]] = chick_counts
 
     def _compute_daily_submissions(self):
+        """Compute daily submission counts."""
         submissions = pd.DataFrame(index=self.data.index)
         submissions["year"] = submissions.index.year
         submissions["date"] = submissions.index.date
@@ -91,14 +68,72 @@ class HotelData:
         daily_counts["date"] = pd.to_datetime(daily_counts["date"])
         self.daily_submissions = daily_counts.set_index("date")
 
-    def select_on(self, hotel: str, month: int = None):
+    def select_on(self, hotel: str, month: int = None) -> pd.DataFrame:
+        """
+        Select data for a specific hotel and optionally a specific month.
+        Returns the row with the maximum nest count for each year.
+        """
         mask = self.data.hotel == hotel
+
         if month is not None:
-            self.month = month
-            mask &= self.data.index.month == self.month
+            month = self._validate_month(month)
+            mask = mask & (self.data.index.month == month)
 
         columns = ["one_chick", "two_chicks", "three_chicks"]
-        selection = self.data[mask]
-        groups = selection.groupby(selection.index.year)
-        result = groups.apply(lambda df: df.loc[df["nestCount"].idxmax(), columns])
-        return result
+        filtered_data = self.data[mask]
+        grouped = filtered_data.groupby(filtered_data.index.year)
+
+        return grouped.apply(lambda df: df.loc[df["nestCount"].idxmax(), columns])
+
+
+class CityData:
+    """
+    Processes city-wide nesting data across multiple stations and years.
+    Provides resampled daily counts and submission statistics.
+    """
+
+    def __init__(
+        self,
+        years: List[int],
+        data: pd.DataFrame,
+    ):
+        self.years = years
+        self.data = data.copy()
+
+        self._prepare_data()
+
+    def _prepare_data(self):
+        """Run preprocessing steps on the input data."""
+        self._resample_data()
+        self._compute_daily_submissions()
+
+    def _resample_data(self, frequency: str = "SME"):
+        """
+        Resample data to the specified daily frequency by station.
+        Aggregates using max for adult and AON counts.
+        """
+        resampled = (
+            self.data.groupby("station")
+            .resample(frequency)
+            .agg({"adultCount": "max", "aonCount": "max"})
+            .reset_index()
+            .sort_values("timestamp")
+            .set_index("timestamp")
+        )
+        columns = ["station", "adultCount", "aonCount"]
+        self.resampled = resampled[columns]
+
+    def _compute_daily_submissions(self):
+        """
+        Compute number of data entries submitted per day, grouped by year.
+        """
+        submissions = pd.DataFrame(index=self.data.index)
+        submissions["year"] = submissions.index.year
+        submissions["date"] = submissions.index.date
+        submissions["entry"] = 1
+
+        daily_counts = (
+            submissions.groupby(["date", "year"])["entry"].sum().reset_index()
+        )
+        daily_counts["date"] = pd.to_datetime(daily_counts["date"])
+        self.daily_submissions = daily_counts.set_index("date")
