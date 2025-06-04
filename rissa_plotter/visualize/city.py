@@ -191,6 +191,8 @@ class CityPlotter:
         logo_ax.imshow(logo)
         logo_ax.axis("off")
 
+        return fig
+
     def _style_plot(self, ax, title, ymax, year_range=None):
         """
         Shared styling for plots.

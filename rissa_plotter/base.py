@@ -107,21 +107,41 @@ class CityData:
         self._resample_data()
         self._compute_daily_submissions()
 
-    def _resample_data(self, frequency: str = "SME"):
+    def _resample_data(self):
         """
         Resample data to the specified daily frequency by station.
         Aggregates using max for adult and AON counts.
         """
+        start = self.data.index[0].date() - pd.Timedelta(days=10)
+        end = self.data.index[-1].date() + pd.Timedelta(days=10)
+        date_range = pd.date_range(start, end, freq="SME")
+
+        temp = self.data.copy().reset_index()
+        temp["assigned_date"] = temp["timestamp"].apply(
+            lambda ts: util.assign_to_nearest(ts, date_range)
+        )
+
         resampled = (
-            self.data.groupby("station")
-            .resample(frequency)
+            temp.groupby(["station", "assigned_date"])
             .agg({"adultCount": "max", "aonCount": "max"})
             .reset_index()
-            .sort_values("timestamp")
-            .set_index("timestamp")
+            .rename(columns={"assigned_date": "timestamp"})
         )
+
+        stations = self.data["station"].unique()
+        full_index = pd.MultiIndex.from_product(
+            [stations, date_range], names=["station", "timestamp"]
+        )
+
+        resampled = (
+            resampled.set_index(["station", "timestamp"])
+            .reindex(full_index, fill_value=0)
+            .reset_index()
+        )
+
         columns = ["station", "adultCount", "aonCount"]
-        self.resampled = resampled[columns]
+
+        self.resampled = resampled.set_index("timestamp")[columns]
 
     def _compute_daily_submissions(self):
         """
