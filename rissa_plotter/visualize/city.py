@@ -151,7 +151,11 @@ class CityPlotter:
         handels_2 = [
             mlines.Line2D([], [], color="black", label="Visible adults", linestyle="-"),
             mlines.Line2D(
-                [], [], color="black", label="Apperently Occupied", linestyle="--"
+                [],
+                [],
+                color="black",
+                label="Apparently occupied \n nests",
+                linestyle="--",
             ),
         ]
         ax.legend(

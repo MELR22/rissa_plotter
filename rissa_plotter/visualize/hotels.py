@@ -47,7 +47,7 @@ class HotelPlotter:
             data.plot.bar(ax=ax, stacked=True, color=colors)
 
             # Clean axis aesthetics
-            ax.set_ylabel("Number of nests")
+            ax.set_ylabel("Number of nests with chicks")
             ax.set_xlabel("")
             ax.set_ylim(0, 30)
             ax.set_title("")  # Clear default pandas title
