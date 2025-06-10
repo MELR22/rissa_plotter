@@ -11,8 +11,9 @@ plt.rcParams["font.family"] = chelsea_font.get_name()
 
 
 class HotelPlotter:
-    def __init__(self, hotel_data: HotelData):
+    def __init__(self, hotel_data: HotelData, transparent: bool):
         self.data = hotel_data
+        self.transparent = transparent
 
     def plot_chick_counts(self, hotels: list = None, month: int = None, **kwargs):
         """
@@ -70,6 +71,10 @@ class HotelPlotter:
                 fontsize=10,
             )
 
+            # transparent background
+            if self.transparent:
+                ax.patch.set_alpha(0.0)
+
         # Add shared legend
         handles = [
             mpatches.Patch(color=c, label=label.replace("_", " "))
@@ -83,6 +88,9 @@ class HotelPlotter:
             bbox_to_anchor=(0.12, 0.9),
         )
 
+        # transparent background
+        if self.transparent:
+            fig.patch.set_alpha(0.0)
         # Add logo
         logo_ax = fig.add_axes([0.75, 0.8, 0.15, 0.15], anchor="SE")
         logo_ax.imshow(logo)
@@ -128,5 +136,10 @@ class HotelPlotter:
         logo_ax = fig.add_axes([0.75, 0.8, 0.15, 0.15], anchor="SE")
         logo_ax.imshow(logo)
         logo_ax.axis("off")
+
+        # transparent background
+        if self.transparent:
+            ax.patch.set_alpha(0.0)
+            fig.patch.set_alpha(0.0)
 
         return fig

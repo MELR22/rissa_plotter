@@ -12,11 +12,12 @@ plt.rcParams["font.family"] = chelsea_font.get_name()
 
 
 class CityPlotter:
-    def __init__(self, city_data: CityData):
+    def __init__(self, city_data: CityData, transparent: bool):
         """
         Initialize CityPlotter with raw city data and prepare resampled version.
         """
         self.data = city_data
+        self.transparent = transparent
 
     def plot_timeseries(self, year: int = None, station: str = None, **kwargs):
         """
@@ -47,8 +48,8 @@ class CityPlotter:
             title += f" - station {station}"
         else:
             data = data[["adultCount", "aonCount"]].groupby(data.index).sum()
+            data = data.where(data > 0)
 
-        data = data.where(data > 0)
         fig, ax = plt.subplots(**kwargs)
 
         data["adultCount"].plot(
@@ -68,6 +69,10 @@ class CityPlotter:
         self._style_plot(
             ax, title, data["adultCount"].max(), year_range=[year] if year else None
         )
+
+        if self.transparent:
+            ax.patch.set_alpha(0.0)
+            fig.patch.set_alpha(0.0)
 
         return fig
 
@@ -118,6 +123,19 @@ class CityPlotter:
                 color=color,
             )
 
+            if year == years[-1]:
+                last_entry = year_data.iloc[[-1]]
+                ax.scatter(
+                    last_entry.index,
+                    last_entry["adultCount"],
+                    color=color,
+                )
+                ax.scatter(
+                    last_entry.index,
+                    last_entry["aonCount"],
+                    color=color,
+                )
+
         # Legend 1 - years
         handles_1 = [
             mlines.Line2D([], [], color=colors[0], label=str(years[0]), linestyle="-"),
@@ -150,6 +168,11 @@ class CityPlotter:
         ax.xaxis.set_major_formatter(DateFormatter("%b-%d"))
         fig.autofmt_xdate()
 
+        # transparent background
+        if self.transparent:
+            ax.patch.set_alpha(0.0)
+            fig.patch.set_alpha(0.0)
+
         return fig
 
     def plot_submissions(self, **kwargs):
@@ -179,12 +202,17 @@ class CityPlotter:
         ax.set_ylabel("Cumulative submissions per year")
         ax.set_xlabel("")
         ax.set_xlim(pd.Timestamp("2000-04-01"), pd.Timestamp("2000-9-30"))
-        ax.set_ylim(0, 1000)
+        ax.set_ylim(0, 1200)
         ax.xaxis.set_major_formatter(DateFormatter("%b-%d"))
         ax.legend(frameon=False, loc="upper left")
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
         fig.autofmt_xdate()
+
+        # transparent background
+        if self.transparent:
+            ax.patch.set_alpha(0.0)
+            fig.patch.set_alpha(0.0)
 
         # Add logo in new axis
         logo_ax = fig.add_axes([0.75, 0.8, 0.15, 0.15], anchor="SE")
@@ -203,7 +231,6 @@ class CityPlotter:
         ax.set_xlabel("")
         ax.set_ylim(0, ymax * 1.1)
         ax.set_title(title, fontsize=14, fontweight="bold")
-        ax.patch.set_alpha(0.0)
 
         if year_range:
             year = year_range[0]
@@ -214,4 +241,3 @@ class CityPlotter:
         logo_ax = fig.add_axes([0.75, 0.80, 0.15, 0.15], anchor="SE")
         logo_ax.imshow(logo)
         logo_ax.axis("off")
-        fig.patch.set_alpha(0.0)

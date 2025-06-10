@@ -4,11 +4,13 @@ import pandas as pd
 import ast
 
 # path = "/path/to/your/firebase_credentials.csv"
-"""
+
 path = r"c:\work_projects\Rissa\data\ontvangen_phillip\rissa-app-firebase-adminsdk-fbsvc-c66690f67d.json"
 city_data = readers.open_city_table(path)
+
+# %%
 tables = readers.FireBase(path).collections()
-"""
+
 path = r"c:\work_projects\Rissa\data\hotel_data.csv"
 df = pd.read_csv(path, index_col=0, parse_dates=True)
 df["ledgeStatuses"] = df["ledgeStatuses"].apply(

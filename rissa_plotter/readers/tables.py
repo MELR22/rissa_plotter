@@ -58,7 +58,6 @@ def open_city_table(path: str | Path) -> pd.DataFrame:
         "displayName",
         "userEmail",
         "station",
-        "timestamp",
         "groupSize",
         "adultCount",
         "aonCount",
