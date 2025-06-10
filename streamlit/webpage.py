@@ -38,7 +38,7 @@ def load_data_local():
     )
 
 
-@st.cache_data
+@st.cache_data(ttl=86400)
 def load_data_firebase():
     firebase_config = st.secrets["firebase"]
     city_data = readers.open_city_table(dict(firebase_config))

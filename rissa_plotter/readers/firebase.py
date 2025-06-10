@@ -1,10 +1,11 @@
+import streamlit as st
 import firebase_admin
-from firebase_admin import credentials
-from firebase_admin import firestore
+from firebase_admin import credentials, firestore
 import pandas as pd
 from pathlib import Path
 
 
+@st.cache_resource
 def initialize_firebase(path: str | Path) -> firestore.client:
     """
     Initialize the Firebase Admin SDK to connect to the Firestore database.
