@@ -8,12 +8,12 @@ import ast
 # ---- Load Data ----
 @st.cache_data
 def load_data_local():
+    path_city_data = r".\data\city_data.csv"
+    path_hotel_data = r".\data\hotel_data.csv"
     years = [2023, 2024, 2025]
 
-    city_data = pd.read_csv(
-        "c:\work_projects\Rissa\data\city_data.csv",
-        parse_dates=["timestamp"],
-    ).set_index("timestamp")
+    city_data = pd.read_csv(path_city_data, parse_dates=["timestamp"])
+    city_data = city_data.set_index("timestamp")
 
     hotels = [
         "Hotel 1",
@@ -29,11 +29,7 @@ def load_data_local():
         "Hotel 5.3",
     ]
 
-    hotel_data = pd.read_csv(
-        "c:\work_projects\Rissa\data\hotel_data.csv",
-        index_col=0,
-        parse_dates=["timestamp"],
-    )
+    hotel_data = pd.read_csv(path_hotel_data, index_col=0, parse_dates=["timestamp"])
     hotel_data["ledgeStatuses"] = hotel_data["ledgeStatuses"].apply(
         lambda x: ast.literal_eval(x) if isinstance(x, str) else x
     )
@@ -44,10 +40,9 @@ def load_data_local():
 
 @st.cache_data
 def load_data_firebase():
-    path = r"c:\work_projects\Rissa\data\ontvangen_phillip\rissa-app-firebase-adminsdk-fbsvc-c66690f67d.json"
-
-    city_data = readers.open_city_table(path)
-    hotel_data = readers.open_hotel_table(path)
+    firebase_config = st.secrets["firebase"]
+    city_data = readers.open_city_table(dict(firebase_config))
+    hotel_data = readers.open_hotel_table(dict(firebase_config))
 
     return city_data, hotel_data
 
@@ -118,7 +113,7 @@ st.markdown(
 )
 
 
-city_data, hotel_data = load_data_local()
+city_data, hotel_data = load_data_firebase()
 
 st.sidebar.header("Lay-out options")
 transparent = st.sidebar.checkbox("Transparent background", value=True)
