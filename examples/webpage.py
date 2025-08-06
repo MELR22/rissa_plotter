@@ -6,36 +6,6 @@ import ast
 
 
 # ---- Load Data ----
-@st.cache_data
-def load_data_local():
-    path_city_data = r".\data\city_data.csv"
-    path_hotel_data = r".\data\hotel_data.csv"
-    years = [2023, 2024, 2025]
-
-    city_data = pd.read_csv(path_city_data, parse_dates=["timestamp"])
-    city_data = city_data.set_index("timestamp")
-
-    hotels = [
-        "Hotel 1",
-        "Hotel 2",
-        "Hotel 3",
-        "Hotel 4",
-        "Hotel 5.1A",
-        "Hotel 5.1B",
-        "Hotel 5.1C",
-        "Hotel 5.2A",
-        "Hotel 5.2B",
-        "Hotel 5.2C",
-        "Hotel 5.3",
-    ]
-
-    hotel_data = pd.read_csv(path_hotel_data, index_col=0, parse_dates=["timestamp"])
-    hotel_data["ledgeStatuses"] = hotel_data["ledgeStatuses"].apply(
-        lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    )
-    return CityData(data=city_data, years=years), HotelData(
-        data=hotel_data, years=years, hotels=hotels
-    )
 
 
 @st.cache_data(ttl=86400)
@@ -115,7 +85,7 @@ st.markdown(
 
 city_data, hotel_data = load_data_firebase()
 
-st.sidebar.header("Lay-out options")
+st.sidebar.header("Figure appearance")
 transparent = st.sidebar.checkbox("Transparent background", value=True)
 dpi = st.sidebar.slider("DPI", min_value=100, max_value=400, value=150, step=10)
 width = st.sidebar.slider("Width (In)", min_value=4, max_value=14, value=12, step=1)
@@ -141,24 +111,7 @@ with tab1:
     year = st.sidebar.selectbox("Select year (optional)", ["All"] + sorted(years))
 
     # Convert input
-    year = int(year) if year != "All" else None
     station = station if station != "All" else None
-
-    st.header("Development of Kittiwake population over time")
-    fig1 = cp.plot_timeseries(year=year, station=station, figsize=figsize, dpi=dpi)
-    st.pyplot(fig1)
-    with st.expander("ℹ️ About this figure"):
-        st.markdown(
-            """
-            This dataset shows the number of counted Kittiwakes across multiple defined stations in the city.  
-            This figure shows:
-            
-            - **`Visible Adults`**: All visible adult birds 
-            - **`Apperently Occupied Nests`**: when one or more adults observed sitting on a nest 
-
-            The observations are aggregated to semi-monthly values (1st and 15th of each month) by taking the max value (this may be an overestimation) at each station of all observations at a specific city station with the closest days to either 1st or 15th of the month. Missing dates are filled with zeros. 
-            """
-        )
 
     st.header("Compare the monitored years")
     fig2 = cp.compare_years(station=station, figsize=figsize, dpi=dpi)
@@ -180,31 +133,20 @@ with tab2:
     st.title("Hotels")
 
     st.sidebar.header("Plot options Hotels")
-    hotel_options = hotel_data.hotels
+    hotel_options = [
+        "Hotel 1",
+        "Hotel 2",
+        "Hotel 3",
+        "Hotel 4",
+        "Hotel 5",
+    ]
     hotels = st.sidebar.multiselect(
         "Select hotel",
         ["All"] + list(sorted(hotel_options)),
         default=hotel_options[:4],
     )
 
-    month_options = {
-        "April": 4,
-        "May": 5,
-        "June": 6,
-        "July": 7,
-        "August": 8,
-        "September": 9,
-    }
-    month_name = st.sidebar.selectbox(
-        "Select month", ["Breeding season"] + list(month_options.keys())
-    )
-
-    if month_name == "Breeding season":
-        month = None
-    else:
-        month = month_options[month_name]
-
-    fig3 = hp.plot_chick_counts(figsize=figsize, dpi=dpi, hotels=hotels, month=month)
+    fig3 = hp.chick_counts(figsize=figsize, dpi=dpi, hotels=hotels)
     st.pyplot(fig3)
     with st.expander("ℹ️ About this figure"):
         st.markdown(
@@ -221,3 +163,11 @@ with tab3:
     st.pyplot(fig4)
     fig5 = hp.plot_submissions(figsize=figsize, dpi=dpi)
     st.pyplot(fig5)
+
+    start = "2025-03-20"
+    end = "2025-08-31"
+    semi_monthly = pd.date_range(start=start, end=end, freq="SME").strftime("%d-%m-%Y")
+
+    bin_name = st.sidebar.selectbox("Select bin", list(semi_monthly))
+
+    fig6 = cp.plot_submissions_per_bin(date=bin_name, figsize=figsize, dpi=dpi)

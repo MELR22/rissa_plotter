@@ -1,8 +1,10 @@
 from importlib.resources import files
 import matplotlib.image as mpimg
 import matplotlib.font_manager as fm
+import re
 
 import pandas as pd
+import xarray as xr
 
 
 class ColorMap:
@@ -29,27 +31,32 @@ def get_chelsea_font():
     return fm.FontProperties(fname=font_path)
 
 
-def add_month_day_columns(df: pd.DataFrame, inplace: bool = False) -> pd.DataFrame:
+def plotting_date(df: xr.DataArray | pd.Series) -> pd.Series:
     """
-    Add 'month_day', 'year', and 'plot_date' columns to align by calendar day across years.
+    Generate 'plot_date' columns for aligning by calendar day across years.
 
     Parameters
     ----------
-    df : pd.DataFrame
-        DataFrame with a datetime index.
+    df : xr.DataArray | pd.Series
+        DataArray with a 'timestamp' coordinate.
 
     Returns
     -------
-    pd.DataFrame
-        Modified DataFrame with added columns.
+    pd.Series
+        Dataseries with 'plot_date'.
     """
-    if not isinstance(df.index, pd.DatetimeIndex):
-        raise ValueError(
-            "DataFrame index must be a DatetimeIndex to add month and day columns."
-        )
-    if not inplace:
-        df = df.copy()
-    df["month_day"] = df.index.strftime("%m-%d")
-    df["year"] = df.index.year
-    df["plot_date"] = pd.to_datetime("2000-" + df["month_day"], format="%Y-%m-%d")
-    return df
+    month_day = df.dt.strftime("%m-%d")
+    plot_date = pd.to_datetime("2000-" + month_day, format="%Y-%m-%d")
+
+    return plot_date
+
+
+def create_hotel_title(hotels):
+    # Extract just the numbers or names after "Hotel"
+    names = [re.sub(r"^Hotel\s*", "", h) for h in hotels]
+    if len(names) == 1:
+        return f"Kittiwakes at hotels - Hotel {names[0]}"
+    elif len(names) == 2:
+        return f"Kittiwakes at hotels - Hotel {names[0]} & {names[1]}"
+    else:
+        return f"Kittiwakes at hotels - Hotel {', '.join(names[:-1])} & {names[-1]}"
