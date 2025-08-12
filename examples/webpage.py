@@ -17,6 +17,14 @@ def load_data_firebase():
     return city_data, hotel_data
 
 
+def load_data_local():
+    path = r"c:\work_projects\RissaCS\Kittiwalkers\ontvangen_phillip\rissa-app-firebase-adminsdk-fbsvc-c66690f67d.json"
+    city_data = readers.open_city_table(path)
+    hotel_data = readers.open_hotel_table(path)
+
+    return city_data, hotel_data
+
+
 st.markdown(
     """
     <style>
@@ -133,7 +141,7 @@ with tab2:
     st.title("Hotels")
 
     st.sidebar.header("Plot options Hotels")
-    hotel_options = [
+    hotel_options_t1 = [
         "Hotel 1",
         "Hotel 2",
         "Hotel 3",
@@ -141,9 +149,9 @@ with tab2:
         "Hotel 5",
     ]
     hotels = st.sidebar.multiselect(
-        "Select hotel",
-        ["All"] + list(sorted(hotel_options)),
-        default=hotel_options[:4],
+        "Select hotels figure chick counts",
+        ["All"] + list(sorted(hotel_options_t1)),
+        default=hotel_options_t1,
     )
 
     fig3 = hp.chick_counts(figsize=figsize, dpi=dpi, hotels=hotels)
@@ -156,18 +164,47 @@ with tab2:
             Please note: For the current year, data may not be available for all months yet.
             """
         )
+
+    st.sidebar.header("Plot options Hotels")
+    hotel_options_all = [
+        "Hotel 1",
+        "Hotel 2",
+        "Hotel 3",
+        "Hotel 4",
+        "Hotel 5",
+        "Hotel 6",
+        "Hotel 7",
+        "Hotel 8",
+        "Hotel 9",
+    ]
+    hotels = st.sidebar.multiselect(
+        "Select hotels other figures",
+        ["All"] + list(sorted(hotel_options_all)),
+        default=hotel_options_all,
+    )
+
+    fig4 = hp.capacity_used(figsize=figsize, dpi=dpi, hotels=hotels, year=2025)
+    st.pyplot(fig4)
+
+    fig5 = hp.compare_years(figsize=figsize, dpi=dpi, hotels=hotels)
+    st.pyplot(fig5)
+
 with tab3:
     st.title("Submissions")
 
-    fig4 = cp.plot_submissions(figsize=figsize, dpi=dpi)
-    st.pyplot(fig4)
-    fig5 = hp.plot_submissions(figsize=figsize, dpi=dpi)
-    st.pyplot(fig5)
+    fig6 = cp.plot_submissions(figsize=figsize, dpi=dpi)
+    st.pyplot(fig6)
+    fig7 = hp.plot_submissions(figsize=figsize, dpi=dpi)
+    st.pyplot(fig7)
 
-    start = "2025-03-20"
+    start = "2025-04-01"
     end = "2025-08-31"
     semi_monthly = pd.date_range(start=start, end=end, freq="SME").strftime("%d-%m-%Y")
 
     bin_name = st.sidebar.selectbox("Select bin", list(semi_monthly))
 
-    fig6 = cp.plot_submissions_per_bin(date=bin_name, figsize=figsize, dpi=dpi)
+    fig8 = cp.plot_submissions_per_bin(date=bin_name, figsize=figsize, dpi=dpi)
+    st.pyplot(fig8)
+
+    fig9 = hp.plot_submissions_per_bin(date=bin_name, figsize=figsize, dpi=dpi)
+    st.pyplot(fig9)
